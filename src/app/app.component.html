@@ -1,0 +1,237 @@
+<!-- background animation -->
+<div id='w'><canvas id="space"></canvas></div>
+<!-- SOUND BACKGROUND -->
+<audio id="background_audio" loop autoplay>
+    <source src="./assets/song.mp3" type="audio/mpeg">
+</audio>
+<div class="btn-toolbar sound-controll" role="toolbar" aria-label="Toolbar with button groups">
+    <div class="btn-group mr-2" role="group" aria-label="First group">
+        <button *ngIf="!audiomute" type="button" (click)="toggleMute()" class="btn btn-secondary"><i class="fas fa-volume-up"></i></button>
+        <button *ngIf="audiomute" type="button" (click)="toggleMute()" class="btn btn-secondary"><i class="fas fa-volume-off"></i></button>
+
+        <button type="button" (click)="volup()" class="btn btn-secondary"><i class="fas fa-plus"></i></button>
+        <button type="button" (click)="voldown()" class="btn btn-secondary"><i class="fas fa-minus"></i></button>
+    </div>
+</div>
+
+
+
+
+<!-- PAGE => INTRO -->
+<div id="intro" *ngIf="page == 'intro'">
+    <div class="row">
+        <div class="col-12 col-sm-6 order-sm-last text-center text-sm-right"><button type="button" (click)="aboutgame()" class="btn btn-yellow mt-4 mr-3">como jogar?</button></div>
+        <div class="col-12 col-sm-6">
+            <div class="rank">
+                <h4 class="text-white"><i class="fas fa-trophy text-yellow"></i> hall of fame</h4>
+                <ul class="list-unstyled">
+                    <li  *ngIf="!listranking.length">
+                        No records
+                    </li>
+                    <li  *ngFor="let rank of listranking | slice:0:3; let i = index;">
+                        <i [ngClass]="{'text-gold':i==0,'text-silver':i==1,'text-bronze':i==2}" class="fas fa-trophy"></i> {{rank.nome}} <span [ngClass]="{'badge-yellow':i==0,'badge-blue':i!=0}" class="badge">{{rank.pontos}}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <img (click)="startgame()" class="game-logo" src="./assets/img/game-logo-01.svg"/>
+    <img class="facedarth" src="./assets/img/helm.png"/>
+
+
+    <div class="modal fade modal-dark" id="aboutgame" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Como jogar ?</h5>
+                    </div>
+                    <div class="modal-body">
+                        <p>ao iniciar o game, você terá <span class="text-yellow">2:00 minutos</span> para adivinhar o nome do máximo de personagens do star wars que você conseguir.</p>
+                        <p>no canto superior direito de cada card existe um número indicando o valor de pontos dele. ex: <span class="text-red">(10)</span></p>
+                        <p>no canto inferior da imagem de cada card existe o botão <span class="text-green">dicas</span>, onde você terá algumas informações sobre o personagem selecionado, porém a pontuação desse personagem cairá para <span class="text-red">(5)</span> pontos!</p>
+                        <p>ao acertar o nome corretamente, você ganhará os pontos, caso contrário, você deixará de ganhar pontos. <span class="text-yellow">PS você não perderá pontos e não poderá tentar novamente o mesmo personagem.</span></p>
+                        <p>ex de nomes: <span class="text-yellow">po-2ck</span> ou <span class="text-yellow">jon snows</span></p>
+                        <p><span class="text-yellow">lembre-se de colocar ífens nos nomes dos personagens que existe</span></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-yellow" data-dismiss="modal">entendi</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+</div>
+
+
+<!-- PAGE => GAME -->
+<div *ngIf="page == 'game'" class="nav-top container-fluid">
+    <div class="row">
+        <div class="col score order-sm-first text-blue"><small>score</small> {{totalpontos}}</div>
+        <div class="col text-center text-yellow"><img class="logo" src="./assets/img/game-logo-02.svg"></div>
+        <div [ngClass]="{'text-red':!timersafe}" class="col timer text-right text-yellow"><i class="fas fa-clock"></i> {{visortimer}}</div>
+    </div>
+</div>
+<div id="game" class="container-fluid" *ngIf="page == 'game'">
+    <div class="row">
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3" *ngFor="let char of chars; let i = index">
+            <div class="card card-dark" [ngClass]="{'acertou':char.status==1,'errou':char.status==-1}">
+                <span *ngIf="char.status==0" class="badge badge-red badge-pill badge-danger">{{char.pontos}}</span>
+                <div class="card-img">
+                    <div *ngIf="char.status!=0" class="pontuacao">
+                        <div class="fix-align" *ngIf="char.status!=0">
+                            <div *ngIf="char.status==1"><i class="fas fa-plus t-30"></i>{{char.pontos}}</div>
+                            <div *ngIf="char.status==-1">0</div>
+                            <small>pontos</small>
+                            <small class="correctname" *ngIf="char.status==-1">{{char.name}}</small>
+                        </div>
+                    </div>
+                    <img class="card-img-top" src="{{char.img}}" alt="Qual o nome desse personagem?">
+                </div>
+                <div class="card-body">
+                    <button type="button" (click)="showinfo(char,i)" class="btn hint btn-sm btn-block">dica</button>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span *ngIf="char.status==0" class="input-group-text" id="basic-addon1"><i class="fas fa-question"></i></span>
+                            <span *ngIf="char.status==-1" class="input-group-text" id="basic-addon1"><i class="fas fa-times"></i></span>
+                            <span *ngIf="char.status==1" class="input-group-text" id="basic-addon1"><i class="fas fa-check"></i></span>
+                        </div>
+                        <input [disabled]="char.status" type="text" (keyup.enter)="checkquestion(char,i,$event)" class="form-control" placeholder="qual meu nome?" aria-describedby="basic-addon1">
+                    </div>
+                    <!-- <h5 class="card-title text-yellow" style="text-transform: lowercase">{{char.name}}</h5> -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="loading" [hidden]="!loading">
+        <div class="sk-fading-circle">
+            <div class="sk-circle1 sk-circle"></div>
+            <div class="sk-circle2 sk-circle"></div>
+            <div class="sk-circle3 sk-circle"></div>
+            <div class="sk-circle4 sk-circle"></div>
+            <div class="sk-circle5 sk-circle"></div>
+            <div class="sk-circle6 sk-circle"></div>
+            <div class="sk-circle7 sk-circle"></div>
+            <div class="sk-circle8 sk-circle"></div>
+            <div class="sk-circle9 sk-circle"></div>
+            <div class="sk-circle10 sk-circle"></div>
+            <div class="sk-circle11 sk-circle"></div>
+            <div class="sk-circle12 sk-circle"></div>
+        </div>
+        Carregando cards
+    </div>
+
+    <div class="search-results"
+      infiniteScroll
+      [infiniteScrollDistance]="200"
+      [infiniteScrollThrottle]="2000"
+      (scrolled)="loadmore()"></div>      
+
+    <div class="modal fade modal-dark" id="modalinfo" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">qual o nome desse personagem?</h5>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-5"><img src="{{modalinfo.photo}}" class="img-fluid rounded" alt="???"></div>
+                    <div class="col">
+                        <p><b>specie:</b>{{modalinfo.species}}</p>
+                        <p><b>height:</b>{{modalinfo.height}}</p>
+                        <p><b>hair:</b>{{modalinfo.hair_color}}</p>
+                        <p><b>planet:</b>{{modalinfo.planet}}</p>
+                    </div>
+                </div>
+                <p>
+                    <b>movies:</b>
+                    <span class="badge badge-red badge-list" *ngFor="let film of modalinfo.films;">{{film}}</span>
+                </p>
+                <p>
+                    <b>vehicles:</b>
+                    <span class="badge badge-blue badge-list" *ngFor="let vehicle of modalinfo.vehicles;">{{vehicle}}</span>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" (click)="clearmodalinfo()" class="btn btn-red" data-dismiss="modal">Fechar</button>
+            </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal modal-full" id="wait" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                Aguarde...
+            </div>
+            <div class="soldier"></div>
+        </div>
+    </div>
+
+</div>
+
+
+
+<!-- PAGE => RESULT -->
+<div id="result" class="container-fluid" *ngIf="page == 'result'">
+    <div class="container text-center">
+        <div class="text-center pt-5 pb-5"><img class="logo" src="./assets/img/game-logo-02.svg"></div>
+
+        <h1 class="text-yellow">quiz finalizado!</h1>
+
+        <table class="table table-striped table-dark mt-5">
+            <thead>
+              <tr>
+                <th scope="col">imagem</th>
+                <th scope="col">nome</th>
+                <th scope="col" class="text-right">pontuação</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of chars">
+                <td *ngIf="item.status == 1"><img src="{{item.img}}" class="img-fluid"/></td>
+                <td *ngIf="item.status == 1" class="text-yellow">{{item.name}}</td>
+                <td *ngIf="item.status == 1" class="text-green text-right">{{item.pontos}}</td>
+              </tr>
+              <tr>
+                <td colspan="2"><button type="button" (click)="openregister()" class="btn btn-yellow"><i class="fas fa-trophy text-black"></i> registrar meu score</button></td>
+                <td [ngClass]="{'text-red':totalpontos==0}" class="text-green text-right t-30">total score: {{totalpontos}}</td>
+              </tr>
+            </tbody>
+        </table>
+    </div>
+
+
+
+
+    <div class="modal fade modal-dark" id="register" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <form name="form" (ngSubmit)="f.form.valid && savescore(ranking)" #f="ngForm" novalidate>
+                <div class="modal-header">
+                    <h5 class="modal-title">Registrar meu score</h5>
+                    <div class="pull-right text-yellow"><b class="t-20">{{totalpontos}}</b> <small>pontos</small></div>
+                </div>
+                <div class="modal-body">
+                    <p>preencha o formulário para registrar seu score</p>
+                    <div class="form-group" [ngClass]="{ 'has-error': f.submitted && !nome.valid }">
+                        <label class="text-white" for="nome">nome</label>
+                        <input type="text" class="form-control font-normal" minlength="3" name="nome" [(ngModel)]="ranking.nome" #nome="ngModel" required />
+                    </div>                    
+                    <div class="form-group" [ngClass]="{ 'has-error': f.submitted && !email.valid }">
+                        <label class="text-white" for="email">e-mail</label>
+                        <input type="email" class="form-control font-normal" name="email" [(ngModel)]="ranking.email" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,3}$" #email="ngModel" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-red" data-dismiss="modal">cancelar</button>
+                    <button type="submit" class="btn btn-green" >registrar</button>
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+
+</div>
