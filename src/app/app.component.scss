@@ -85,9 +85,8 @@
     .card-img{
         overflow: hidden;
         position: relative;
-        height: 250px;
+        &,& img{height: 35vh;}
         img{
-          height: 250px;
           object-fit: cover;
           object-position: top;
           transform: scale(1.3);

@@ -167,8 +167,10 @@ $c6: #6b657e;
 
 
 
-@media (min-width: 576px) {
-
+@media (max-width: 576px) {
+  .card-img{
+    &,& img{height: 50vh !important;}
+  }
 }
 
 // Medium devices (tablets, 768px and up)
